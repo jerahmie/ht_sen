@@ -8,6 +8,7 @@
 #include <pwd.h>
 #include <getopt.h>
 #include <time.h>
+#include "rpi_gpio.h"
 
 void print_help(void)
 {
