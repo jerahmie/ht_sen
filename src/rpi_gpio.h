@@ -31,7 +31,7 @@
 #define GPIO_PULLCLK0 *(gpio+38) // Pull up/pull down clock#define GPIO_SET *(gpio+7)  // sets   bits which are 1 ignores bits which are 0
 #define GPIO_CLR *(gpio+10) // clears bits which are 1 ignores bits which are 0
 
-void setup_io();
+void setup_rpi_io();
 
  
 #endif // __RPI_GPIO__

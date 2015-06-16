@@ -162,6 +162,9 @@ int main(int argc, char* argv[])
       return(EXIT_FAILURE);
     }
 
+  // configure GPIO
+  setup_rpi_gpio();
+
   while (1)
     {
       // TODO: Insert daemon code here.
