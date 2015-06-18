@@ -27,11 +27,42 @@
 #define READ_STATUS_REG 7  // SHT15 read status register command: 00000111
 #define WRITE_STATUS_REG 6 // SHT15 write status register command: 00000110
 
+// Relative humidity
+#define C1_8BIT -2.0468
+#define C2_8BIT 0.5872
+#define C3_8BIT -0.00040845
+#define C1_12BIT -2.0468
+#define C2_12BIT 0.0367
+#define C3_12BIT -0.0000015966
+
+// Temperature conversion coefficients 3.3V
+#define D1_C -39.65
+#define D2_C_12BIT 0.04
+#define D2_C_14BIT 0.01
+#define D1_F -39.4
+#define D2_F_12BIT 0.072
+#define D2_F_14BIT 0.018
+
+// Temperature Humidity compensation coefficients
+#define T1_8BIT 0.01
+#define T2_8BIT 0.00128
+#define T1_12BIT 0.01
+#define T2_12BIT 0.00008
+
+// Dew point coefficients 
+#define TN_C_WATER 243.12
+#define M_WATER 17.62
+#define TN_C_ICE 272.62
+#define M_ICE 22.46
+
 int transmission_start();
-int read_status_register();
-int write_status_register();
-//int measure_temperature();
-//int measure_humidity();
+int conn_reset();
+uint8_t read_status_register();
+int write_status_register(uint8_t);
 uint16_t measure_rht(uint8_t);
+float relative_humidity(uint16_t, float, int);
+float temperature(uint16_t, const char, int);
+float dew_point(float, float);
 
 #endif // __HT_SEN_H__
+
