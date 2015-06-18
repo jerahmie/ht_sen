@@ -71,7 +71,7 @@ int write_status_register()
   return 0;
 }
 
-int measure_rht( uint8_t measurement_type)
+uint16_t measure_rht( uint8_t measurement_type)
 {
   int i;
   uint16_t measurement_raw = 0;
@@ -106,18 +106,19 @@ int measure_rht( uint8_t measurement_type)
 	GPIO_CLR = 1<<SCK;
 //	nanosleep(&tim_clk, NULL);
     }
+  // switch DATA to input to read results
   INP_GPIO(DATA);
   nanosleep(&tim_clk, NULL);
   GPIO_SET = 1<<SCK;
   nanosleep(&tim_clk, NULL);
-  int sen_ack = GET_GPIO(DATA);
+  uint16_t sen_ack = GET_GPIO(DATA);
   nanosleep(&tim_clk, NULL);
   GPIO_CLR = 1<<SCK;
   nanosleep(&tim_clk, NULL);
-  if (sen_ack != 0 )
+  if (sen_ack)
     {
       printf("[ERROR] Did not receive ACK from sensor! Exiting.\n");
-      return 0;
+      return -1;
     }
   else 
     {
@@ -125,34 +126,35 @@ int measure_rht( uint8_t measurement_type)
       for(i=0; i<8; i++)
         {
           GPIO_SET = 1<<SCK;
-          nanosleep(&tim_clk, NULL);
-          measurement_raw << 1;
-          measurement_raw | GET_GPIO(DATA);
-          nanosleep(&tim_clk, NULL);
-          GPIO_SET = 0<<SCK;
+          nanosleep(&tim_clk_half, NULL);
+          measurement_raw<<1;
+          measurement_raw += (GET_GPIO(DATA)?1:0);
+          nanosleep(&tim_clk_half, NULL);
+          GPIO_CLR = 1<<SCK;
           nanosleep(&tim_clk, NULL);
         }
-      // mid-data ACK
-      INP_GPIO(DATA);
+      // mid-data ACKP
+      //      INP_GPIO(DATA);
       OUT_GPIO(DATA);
       GPIO_CLR = 1<<DATA;
+      nanosleep(&tim_clk_half, NULL);
       GPIO_SET = 1<<SCK;
-      nanosleep(&tim_clk, NULL);
+      nanosleep(&tim_clk_half, NULL);
       INP_GPIO(DATA);
-      GPIO_CLR = 1<<SCK;
+      GPIO_CLR = 1<<SCK;      
       nanosleep(&tim_clk, NULL);
       // read LSb
       for(i=0; i<8; i++)
         {
           GPIO_SET = 1<<SCK;
           nanosleep(&tim_clk_half, NULL);
-          measurement_raw << 1;
-          measurement_raw | GET_GPIO(DATA);
+          measurement_raw<<1;
+          measurement_raw += (GET_GPIO(DATA)?1:0);
           nanosleep(&tim_clk_half, NULL);
           GPIO_CLR = 1<<SCK;
           nanosleep(&tim_clk, NULL);
         }
     }
   
-  return (int) measurement_raw;
+  return measurement_raw;
 }

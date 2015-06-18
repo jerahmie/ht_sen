@@ -32,6 +32,6 @@ int read_status_register();
 int write_status_register();
 //int measure_temperature();
 //int measure_humidity();
-int measure_rht(uint8_t);
+uint16_t measure_rht(uint8_t);
 
 #endif // __HT_SEN_H__
