@@ -18,18 +18,23 @@ volatile unsigned *gpio;
 
 int main()
 {
-    int raw_data;
+    uint16_t raw_data;
+    uint8_t sht15_status;
+     
     printf("Testing gpio.\n");
     setup_rpi_gpio();
 
-//    read_status_register();
-//    write_status_register();
-    transmission_start();
-//    transmission_start();
-//    raw_data = measure_rht(MEASURE_TEMP);
-//    printf("Raw data: %s\n", raw_data);
+    sht15_status = read_status_register();
+    printf("SHT15 STATUS: %d", (uint)sht15_status );
+    conn_reset();
+    
+    sleep(1);
+    raw_data = measure_rht(MEASURE_TEMP);    
+    sleep(1);
+    printf("SOT: %d\n", raw_data);
     raw_data = measure_rht(MEASURE_REL_HUM);
-    printf("Raw data: %s\n", raw_data);
+
+    printf("SORH: %d\n", raw_data);
 
     return 0;
 }

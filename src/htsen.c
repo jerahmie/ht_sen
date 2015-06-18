@@ -14,39 +14,6 @@
 // I/O access
 volatile unsigned *gpio;
 
-int conn_reset()
-{
-  // Reset communication with SHT15
-  // Hold DATA line hight while toggling SCK nine or more times, followed by
-  // transmission start sequence
-  int index;
-  struct timespec tim_clk, tim_clk_half;
-  tim_clk.tv_sec = 0; tim_clk.tv_nsec = TSCK_NS;
-  tim_clk_half.tv_sec = 0; tim_clk_half.tv_nsec = TSCK_NS>>1;
-  
-  printf("Resetting connection...");
-  // set SCK, DATA pins to output
-  INP_GPIO(SCK);
-  INP_GPIO(DATA);
-  OUT_GPIO(SCK);
-  OUT_GPIO(DATA);
-
-  GPIO_SET = 1<<DATA;
-  nanosleep(&tim_clk_half, NULL);
-  GPIO_CLR = 1<<SCK;
-  nanosleep(&tim_clk_half, NULL);
-
-  // toggle SCK 9 times
-  for( index=0; index<9; index++)
-    {
-      GPIO_SET = 1<<SCK;
-      nanosleep(&tim_clk, NULL);
-      GPIO_CLR = 1<<SCK;
-      nanosleep(&tim_clk, NULL);
-    }
-  transmission_start();
-  return 0;
-}
 
 int transmission_start()
 {
@@ -85,24 +52,60 @@ int transmission_start()
   return 0;
 }
 
+int conn_reset()
+{
+  // Reset communication with SHT15
+  // Hold DATA line hight while toggling SCK nine or more times, followed by
+  // transmission start sequence
+  int index;
+  struct timespec tim_clk, tim_clk_half;
+  tim_clk.tv_sec = 0; tim_clk.tv_nsec = TSCK_NS;
+  tim_clk_half.tv_sec = 0; tim_clk_half.tv_nsec = TSCK_NS>>1;
+  
+  printf("Resetting connection...");
+  // set SCK, DATA pins to output
+  INP_GPIO(SCK);
+  INP_GPIO(DATA);
+  OUT_GPIO(SCK);
+  OUT_GPIO(DATA);
+
+  GPIO_SET = 1<<DATA;
+  nanosleep(&tim_clk_half, NULL);
+  GPIO_CLR = 1<<SCK;
+  nanosleep(&tim_clk_half, NULL);
+
+  // toggle SCK 9 times
+  for( index=0; index<9; index++)
+    {
+      GPIO_SET = 1<<SCK;
+      nanosleep(&tim_clk, NULL);
+      GPIO_CLR = 1<<SCK;
+      nanosleep(&tim_clk, NULL);
+    }
+  transmission_start();
+
+  return 0;
+}
+
 uint8_t read_status_register()
 {
   int i;
   uint16_t sen_ack;
   uint8_t status_register = 0;
 
-  printf("read_status_register...\n");
-
   struct timespec tim_r, tim_clk, tim_clk_half;
   tim_r.tv_sec = 0; tim_r.tv_nsec=TRISE_NS;      // rise/fall time
   tim_clk.tv_sec = 0; tim_clk.tv_nsec = TSCK_NS; // clock high/low time
   tim_clk_half.tv_sec = 0; tim_clk.tv_nsec = TSCK_NS>>1; // clock high/low time
   
+  printf("read_status_register...\n");
+  transmission_start();
+  
   // set SCK, DATA to output
-  INP_GPIO(SCK);
-  INP_GPIO(DATA);
-  OUT_GPIO(SCK);
-  OUT_GPIO(DATA);
+  //INP_GPIO(SCK);
+  //INP_GPIO(DATA);
+  //OUT_GPIO(SCK);
+  //OUT_GPIO(DATA);
   
   for (i=0; i<8; i++)
     {
@@ -189,10 +192,12 @@ uint16_t measure_rht( uint8_t measurement_type)
     }
 
   // set SCK, DATA to output
-  INP_GPIO(SCK);
-  INP_GPIO(DATA);
-  OUT_GPIO(SCK);
-  OUT_GPIO(DATA);
+  //INP_GPIO(SCK);
+  //INP_GPIO(DATA);
+  //OUT_GPIO(SCK);
+  //OUT_GPIO(DATA);
+
+  transmission_start();
   
   for (i=0; i<8; i++)
     {
