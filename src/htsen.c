@@ -26,22 +26,22 @@ int transmission_start()
   OUT_GPIO(SCK);
   OUT_GPIO(DATA);
 
-  GPIO_SET = 0<<SCK;
+  GPIO_CLR = 1<<SCK;
   GPIO_SET = 1<<DATA;
   nanosleep(&tim1, NULL);
   GPIO_SET = 1<<SCK;
   nanosleep(&tim1, NULL);
-  GPIO_SET = 0<<DATA;
+  GPIO_CLR = 1<<DATA;
   nanosleep(&tim1, NULL);
-  GPIO_SET = 0<<SCK;
+  GPIO_CLR = 1<<SCK;
   nanosleep(&tim1, NULL);
   GPIO_SET = 1<<SCK;
   nanosleep(&tim1, NULL);
   GPIO_SET = 1<<DATA;
   nanosleep(&tim1, NULL);
-  GPIO_SET = 0<<SCK;
+  GPIO_CLR = 1<<SCK;
   nanosleep(&tim1, NULL);
-  
+  GPIO_CLR = 1<<DATA;
   return 0;
 }
 
@@ -71,19 +71,6 @@ int write_status_register()
   return 0;
 }
 
-//int measure_temperature()
-//{
-//  int i;
-//  printf("measure_temperature...\n");
-//  for (i=0; i<8; i++)
-//    {
-//      printf("%d", (MEASURE_TEMP&(128>>i))?1:0);
-//    }
-//  printf("\n");
-//  
-//  return 0;
-//}
-
 int measure_rht( uint8_t measurement_type)
 {
   int i;
@@ -108,23 +95,29 @@ int measure_rht( uint8_t measurement_type)
   
   for (i=0; i<8; i++)
     {
-      GPIO_SET = ((measurement_type&(128>>i))?1:0)<<DATA;
-      nanosleep(&tim_r, NULL);
-      GPIO_SET = 1<<SCK;
-      nanosleep(&tim_clk, NULL);
-      GPIO_SET = 0<<SCK;
-      }
+	nanosleep(&tim_r, NULL);
+	if (measurement_type&(128>>i)) {
+	    GPIO_SET = 1<<DATA;
+	} else {
+	    GPIO_CLR = 1<<DATA;
+	}
+	GPIO_SET = 1<<SCK;
+	nanosleep(&tim_clk, NULL);
+	GPIO_CLR = 1<<SCK;
+//	nanosleep(&tim_clk, NULL);
+    }
   INP_GPIO(DATA);
-  GPIO_SET = 1<<SCK;
-  nanosleep(&tim_clk_half, NULL);
-  int sen_ack = GET_GPIO(DATA);
-  nanosleep(&tim_clk_half, NULL);
-  GPIO_SET = 0<<SCK;
   nanosleep(&tim_clk, NULL);
-  if (sen_ack)
+  GPIO_SET = 1<<SCK;
+  nanosleep(&tim_clk, NULL);
+  int sen_ack = GET_GPIO(DATA);
+  nanosleep(&tim_clk, NULL);
+  GPIO_CLR = 1<<SCK;
+  nanosleep(&tim_clk, NULL);
+  if (sen_ack != 0 )
     {
       printf("[ERROR] Did not receive ACK from sensor! Exiting.\n");
-      return -1;
+      return 0;
     }
   else 
     {
@@ -132,21 +125,21 @@ int measure_rht( uint8_t measurement_type)
       for(i=0; i<8; i++)
         {
           GPIO_SET = 1<<SCK;
-          nanosleep(&tim_clk_half, NULL);
+          nanosleep(&tim_clk, NULL);
           measurement_raw << 1;
           measurement_raw | GET_GPIO(DATA);
-          nanosleep(&tim_clk_half, NULL);
+          nanosleep(&tim_clk, NULL);
           GPIO_SET = 0<<SCK;
           nanosleep(&tim_clk, NULL);
         }
       // mid-data ACK
       INP_GPIO(DATA);
       OUT_GPIO(DATA);
-      GPIO_SET = 0<<DATA;
+      GPIO_CLR = 1<<DATA;
       GPIO_SET = 1<<SCK;
       nanosleep(&tim_clk, NULL);
       INP_GPIO(DATA);
-      GPIO_SET = 0<<SCK;
+      GPIO_CLR = 1<<SCK;
       nanosleep(&tim_clk, NULL);
       // read LSb
       for(i=0; i<8; i++)
@@ -156,7 +149,7 @@ int measure_rht( uint8_t measurement_type)
           measurement_raw << 1;
           measurement_raw | GET_GPIO(DATA);
           nanosleep(&tim_clk_half, NULL);
-          GPIO_SET = 0<<SCK;
+          GPIO_CLR = 1<<SCK;
           nanosleep(&tim_clk, NULL);
         }
     }
