@@ -27,9 +27,9 @@ int main()
 
     
 //    sleep(1);
-    raw_data = measure_rht(MEASURE_TEMP);    
+    raw_data = measure_rht(MEASURE_TEMP_CMD);    
     printf("SOT: %d\n", raw_data);
-    raw_data = measure_rht(MEASURE_REL_HUM);
+    raw_data = measure_rht(MEASURE_REL_HUM_CMD);
     printf("SORH: %d\n", raw_data);
 
     return 0;

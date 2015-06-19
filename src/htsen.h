@@ -22,11 +22,11 @@
 #define LOW 0              // logic low
 
 
-#define MEASURE_TEMP 3     // SHT15 measure temperature command: 00000011
-#define MEASURE_REL_HUM 5  // SHT15 measure relative humidity command: 00000101
-#define READ_STATUS_REG 7  // SHT15 read status register command: 00000111
-#define WRITE_STATUS_REG 6 // SHT15 write status register command: 00000110
-#define SOFT_RESET 30      // SHT15 soft reset command: 00011110
+#define MEASURE_TEMP_CMD 3     // SHT15 measure temperature command: 00000011
+#define MEASURE_REL_HUM_CMD 5  // SHT15 measure relative humidity command: 00000101
+#define READ_STATUS_REG_CMD 7  // SHT15 read status register command: 00000111
+#define WRITE_STATUS_REG_CMD 6 // SHT15 write status register command: 00000110
+#define SOFT_RESET_CMD 30      // SHT15 soft reset command: 00011110
 
 // Relative humidity
 #define C1_8BIT -2.0468
@@ -57,14 +57,16 @@
 #define M_ICE 22.46
 
 int transmission_start();
+int wait_for_device_ready(float, float);
+int soft_reset();
 int conn_reset();
 uint8_t read_status_register();
 int write_status_register(uint8_t);
 uint16_t measure_rht(uint8_t);
-float relative_humidity(uint16_t, float, int);
-float temperature(uint16_t, const char, int);
+float sot_to_temperature(uint16_t, const char, int);
+float sorh_to_relative_humidity(uint16_t, float, int);
 float dew_point(float, float);
-int soft_reset();
+int get_measurements(float *, float*, float* );
 
 #endif // __HT_SEN_H__
 
