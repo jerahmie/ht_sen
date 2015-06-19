@@ -14,23 +14,26 @@ volatile unsigned *gpio;
 
 int main()
 {
-    uint16_t raw_data;
-    uint8_t sht15_status;
-     
-    printf("Testing gpio.\n");
-    setup_rpi_gpio();
-//    soft_reset();
-//    conn_reset();
+  //    uint16_t raw_data;
+  //    uint8_t sht15_status;
+  float temperature_C, relative_humidity, dew_point_C;
+  int status;
+  printf("Testing gpio.\n");
+  setup_rpi_gpio();
+  //    soft_reset();
+  //    conn_reset();
 
-//    sht15_status = read_status_register();
-//    printf("SHT15 STATUS: %d\n", sht15_status );
+  //    sht15_status = read_status_register();
+  //    printf("SHT15 STATUS: %d\n", sht15_status );
 
-    
-//    sleep(1);
-    raw_data = measure_rht(MEASURE_TEMP_CMD);    
-    printf("SOT: %d\n", raw_data);
-    raw_data = measure_rht(MEASURE_REL_HUM_CMD);
-    printf("SORH: %d\n", raw_data);
+  //    raw_data = measure_rht(MEASURE_TEMP_CMD);    
+  //    printf("SOT: %d\n", raw_data);
+  //    raw_data = measure_rht(MEASURE_REL_HUM_CMD);
+  //    printf("SORH: %d\n", raw_data);
 
-    return 0;
+  status = get_measurements(&temperature_C, &relative_humidity, &dew_point_C);
+  printf("Temp: %.3f C, RH: %.1f, DP: %.3f C\n", temperature_C,
+         relative_humidity, dew_point_C);
+
+  return 0;
 }

@@ -22,11 +22,11 @@ volatile unsigned *gpio;
 int transmission_start()
 {
   printf("Starting send command.\n");
-  
+
   struct timespec tim_setup, tim_clk;
   tim_setup.tv_sec = 0; tim_setup.tv_nsec = TRISE_NS;
   tim_clk.tv_sec = 0; tim_clk.tv_nsec = TSCK_NS;
-  
+
   INP_GPIO(SCK);
   INP_GPIO(DATA);
   OUT_GPIO(SCK);
@@ -52,11 +52,11 @@ int transmission_start()
   nanosleep(&tim_clk, NULL);
   GPIO_CLR = 1<<DATA;
   nanosleep(&tim_clk, NULL);
-  
+
   return 0;
 }
 
-/* 
+/*
  * \fn wait_for_device_ready
  * Poll SHT15 DATA line to determine device ready for DATA read.
  * After command is sent to the SHT15, the device will set DATA line high until
@@ -73,7 +73,7 @@ int wait_for_device_ready(const float poll_period_ms, const float timeout_ms)
   struct timespec tim_poll;
   const long poll_period_ns = (long)(poll_period_ms * 1.0e6);
   tim_poll.tv_sec = 0; tim_poll.tv_nsec = poll_period_ns;
-  
+
   // Set DATA pin to input
   INP_GPIO(DATA);
 
@@ -86,7 +86,7 @@ int wait_for_device_ready(const float poll_period_ms, const float timeout_ms)
         nanosleep(&tim_poll, NULL);
       }
     }
-  
+
   return max_index;
 }
 
@@ -146,7 +146,7 @@ int conn_reset()
   struct timespec tim_clk, tim_clk_half;
   tim_clk.tv_sec = 0; tim_clk.tv_nsec = TSCK_NS;
   tim_clk_half.tv_sec = 0; tim_clk_half.tv_nsec = TSCK_NS>>1;
-  
+
   printf("Resetting connection...");
   // set SCK, DATA pins to output
   INP_GPIO(SCK);
@@ -188,16 +188,16 @@ uint8_t read_status_register()
   tim_r.tv_sec = 0; tim_r.tv_nsec=TRISE_NS;      // rise/fall time
   tim_clk.tv_sec = 0; tim_clk.tv_nsec = TSCK_NS; // clock high/low time
   tim_clk_half.tv_sec = 0; tim_clk.tv_nsec = TSCK_NS>>1; // clock high/low time
-  
+
   printf("read_status_register...\n");
   transmission_start();
-  
+
   // set SCK, DATA to output
   INP_GPIO(SCK);
   INP_GPIO(DATA);
   OUT_GPIO(SCK);
   OUT_GPIO(DATA);
-  
+
   for (i=0; i<8; i++)
     {
       if (READ_STATUS_REG_CMD&(128>>i))
@@ -240,7 +240,7 @@ uint8_t read_status_register()
       nanosleep(&tim_clk_half, NULL);
       status_register = status_register <<1;
       if (GET_GPIO(DATA)) {
-	  status_register += 1;
+        status_register += 1;
       }
 
       nanosleep(&tim_clk_half, NULL);
@@ -251,7 +251,7 @@ uint8_t read_status_register()
   nanosleep(&tim_clk, NULL);
   GPIO_CLR = 1<<SCK;
   nanosleep(&tim_clk, NULL);
-  
+
   return status_register;
 }
 
@@ -268,7 +268,7 @@ int write_status_register(uint8_t status_register)
       printf("%d", (WRITE_STATUS_REG_CMD&(128>>i))?1:0);
     }
   printf("\n");
-  
+
   return 0;
 }
 
@@ -304,24 +304,24 @@ uint16_t measure_rht(uint8_t measurement_type)
   // set SCK, DATA to output
   OUT_GPIO(SCK);
   OUT_GPIO(DATA);
-  
+
   for (i=0; i<8; i++)
     {
-	if (measurement_type&(128>>i)) {
-	    GPIO_SET = 1<<DATA;
-	} else {
-	    GPIO_CLR = 1<<DATA;
-	}
+      if (measurement_type&(128>>i)) {
+        GPIO_SET = 1<<DATA;
+      } else {
+        GPIO_CLR = 1<<DATA;
+      }
         nanosleep(&tim_r, NULL);
-	GPIO_SET = 1<<SCK;
-	nanosleep(&tim_clk, NULL);
-	GPIO_CLR = 1<<SCK;
+        GPIO_SET = 1<<SCK;
+        nanosleep(&tim_clk, NULL);
+        GPIO_CLR = 1<<SCK;
     }
-  
+
   // switch DATA to input to read results
   INP_GPIO(DATA);
   nanosleep(&tim_clk, NULL);
-	
+
   //nanosleep(&tim_r, NULL);
   GPIO_SET = 1<<SCK;
   nanosleep(&tim_clk_half, NULL);
@@ -332,7 +332,7 @@ uint16_t measure_rht(uint8_t measurement_type)
       printf("[ERROR] Did not receive ACK from sensor! Exiting.\n");
       return -1;
     }
-  
+
   // poll DATA ready every 10 ms (1sec timeout)
   int data_ready_timeout = wait_for_device_ready(10.0, 1000.0);  
 
@@ -350,7 +350,7 @@ uint16_t measure_rht(uint8_t measurement_type)
       nanosleep(&tim_clk_half, NULL);
       measurement_raw = measurement_raw<<1;
       if (GET_GPIO(DATA)){
-	  measurement_raw += 1;
+        measurement_raw += 1;
       }
       nanosleep(&tim_clk_half, NULL);
       GPIO_CLR = 1<<SCK;
@@ -368,7 +368,7 @@ uint16_t measure_rht(uint8_t measurement_type)
   nanosleep(&tim_clk, NULL);
   INP_GPIO(DATA);
   nanosleep(&tim_r, NULL);
-  GPIO_CLR = 1<<SCK;      
+  GPIO_CLR = 1<<SCK;
   nanosleep(&tim_clk, NULL);
 
   // read LSb
@@ -382,17 +382,17 @@ uint16_t measure_rht(uint8_t measurement_type)
       GPIO_CLR = 1<<SCK;
       nanosleep(&tim_clk, NULL);
     }
-  
+
   return measurement_raw;
 }
 
 
 float sot_to_temperature(uint16_t sot,
                   const char units,
-                  int temp_resolution)
+                  uint temp_resolution)
 {
   float temperature;
-  
+
   if (temp_resolution == 12)
     {
       if (units == 'c' || units == 'C') {
@@ -403,7 +403,7 @@ float sot_to_temperature(uint16_t sot,
         printf("[ERROR] Units must be 'C' or 'F'. '%c' was specified.", units);
         return -1;
       }
-      
+
     }
   else if (temp_resolution == 14)
     {
@@ -422,13 +422,13 @@ float sot_to_temperature(uint16_t sot,
 
       return -1;
     }
-  
+
   return temperature;
 }
 
 float sorh_to_relative_humidity(uint16_t sorh,
                                float temperature,
-                               int rh_resolution)
+                               uint rh_resolution)
 {
   float rh_linear, rh_true;
 
@@ -480,11 +480,28 @@ int get_measurements(float *temperature_C,
                      float *relative_humidity,
                      float *dew_point_C)
 {
+  uint temp_resolution, rh_resolution;
   uint16_t rot1, sorh1;
+  uint8_t sht15_status;
+
+  sht15_status = read_status_register();
+  if (sht15_status&1)
+    {
+      temp_resolution = 12;
+      rh_resolution = 8;
+    }
+  else
+    {
+      temp_resolution = 14;
+      rh_resolution = 12;
+    }
   rot1 = measure_rht(MEASURE_TEMP_CMD);
   sorh1 = measure_rht(MEASURE_REL_HUM_CMD);
-  *temperature_C = sot_to_temperature(rot1, 'C', 14);
-  *relative_humidity = sorh_to_relative_humidity(sorh1, *temperature_C, 12);
+  *temperature_C = sot_to_temperature(rot1, 'C', temp_resolution);
+  *relative_humidity = sorh_to_relative_humidity(sorh1,
+                                                 *temperature_C,
+                                                 rh_resolution);
   *dew_point_C = dew_point(*relative_humidity, *temperature_C);
+
   return 0;
 }
