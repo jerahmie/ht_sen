@@ -14,6 +14,40 @@
 // I/O access
 volatile unsigned *gpio;
 
+int soft_reset()
+{
+    int i;
+    struct timespec tim_r, tim_clk;
+    tim_r.tv_sec = 0; tim_r.tv_nsec = TRISE_NS;
+    tim_clk.tv_sec = 0; tim_clk.tv_nsec = TSCK_NS;
+
+    printf("Resetting SHT15...\n");
+    transmission_start();
+
+    INP_GPIO(SCK);
+    INP_GPIO(DATA);
+    OUT_GPIO(SCK);
+    OUT_GPIO(DATA);
+
+    for (i=0; i<8; i++)
+    {
+      if (SOFT_RESET&(128>>i))
+        {
+          GPIO_SET = 1<<DATA;
+        }
+      else
+        {
+          GPIO_CLR = 1<<DATA;
+        }
+      nanosleep(&tim_r, NULL);
+      GPIO_SET = 1<<SCK;
+      nanosleep(&tim_clk, NULL);
+      GPIO_CLR = 1<<SCK;
+
+    }
+    sleep(1);
+    return 0;
+}
 
 int transmission_start()
 {
@@ -102,10 +136,10 @@ uint8_t read_status_register()
   transmission_start();
   
   // set SCK, DATA to output
-  //INP_GPIO(SCK);
+//  INP_GPIO(SCK);
   //INP_GPIO(DATA);
-  //OUT_GPIO(SCK);
-  //OUT_GPIO(DATA);
+  OUT_GPIO(SCK);
+  OUT_GPIO(DATA);
   
   for (i=0; i<8; i++)
     {
@@ -125,11 +159,13 @@ uint8_t read_status_register()
     }
 
   // switch DATA to input and read status register
+  nanosleep(&tim_r, NULL);
   INP_GPIO(DATA);
   nanosleep(&tim_r, NULL);
   GPIO_SET = 1<<SCK;
   nanosleep(&tim_clk_half, NULL);
   sen_ack = GET_GPIO(DATA);
+  printf("sen_ack: %d\n", sen_ack);
   nanosleep(&tim_clk_half, NULL);
   if (sen_ack)
     {
@@ -145,8 +181,16 @@ uint8_t read_status_register()
     {
       GPIO_SET = 1<<SCK;
       nanosleep(&tim_clk_half, NULL);
-      status_register <<1;
-      status_register += (GET_GPIO(DATA)?1:0);
+      status_register = status_register <<1;
+//      printf("%d\n", GET_GPIO(DATA));
+      if ( GET_GPIO(DATA) ) {
+	  status_register += 1;
+      }
+//	  printf("1");
+//      } else {
+//	  printf("0");
+//      }
+
       nanosleep(&tim_clk_half, NULL);
       GPIO_CLR = 1<<SCK;
       nanosleep(&tim_clk, NULL);
@@ -191,13 +235,11 @@ uint16_t measure_rht( uint8_t measurement_type)
       printf("Measuring humidity...\n");
     }
 
-  // set SCK, DATA to output
-  //INP_GPIO(SCK);
-  //INP_GPIO(DATA);
-  //OUT_GPIO(SCK);
-  //OUT_GPIO(DATA);
-
   transmission_start();
+
+  // set SCK, DATA to output
+  OUT_GPIO(SCK);
+  OUT_GPIO(DATA);
   
   for (i=0; i<8; i++)
     {
@@ -210,12 +252,13 @@ uint16_t measure_rht( uint8_t measurement_type)
 	GPIO_SET = 1<<SCK;
 	nanosleep(&tim_clk, NULL);
 	GPIO_CLR = 1<<SCK;
-	nanosleep(&tim_clk, NULL);
     }
   
   // switch DATA to input to read results
   INP_GPIO(DATA);
-  nanosleep(&tim_r, NULL);
+  nanosleep(&tim_clk, NULL);
+	
+  //nanosleep(&tim_r, NULL);
   GPIO_SET = 1<<SCK;
   nanosleep(&tim_clk_half, NULL);
   sen_ack = GET_GPIO(DATA);
@@ -234,11 +277,15 @@ uint16_t measure_rht( uint8_t measurement_type)
     {
       GPIO_SET = 1<<SCK;
       nanosleep(&tim_clk_half, NULL);
-      measurement_raw<<1;
-      measurement_raw += (GET_GPIO(DATA)?1:0);
+      measurement_raw = measurement_raw<<1;
+      if (GET_GPIO(DATA)){
+	  measurement_raw += 1;
+      }
+      
       nanosleep(&tim_clk_half, NULL);
       GPIO_CLR = 1<<SCK;
       nanosleep(&tim_clk, NULL);
+      nanosleep(&tim_clk_half, NULL);
     }
 
   // send mid-data ACK

@@ -11,7 +11,7 @@
 #define DATA 23            // SHT15 DATA = RPI GPIO 23
 #define FSCK 100000        // SHT15 SCK frequency 0.1 MHz
 #define TSCK 0.00001       // SCK time period (seconds)
-#define TSCK_NS 20000      // SCK time period (nanoseconds)
+#define TSCK_NS 10000      // SCK time period (nanoseconds)
 #define TSCKH TSCK         // SCK High Time
 #define TSCKL TSCK         // SCK Low Time
 #define TSCKH_NS TSCK_NS   // SCK High Time (nanoseconds)
@@ -26,6 +26,7 @@
 #define MEASURE_REL_HUM 5  // SHT15 measure relative humidity command: 00000101
 #define READ_STATUS_REG 7  // SHT15 read status register command: 00000111
 #define WRITE_STATUS_REG 6 // SHT15 write status register command: 00000110
+#define SOFT_RESET 30      // SHT15 soft reset command: 00011110
 
 // Relative humidity
 #define C1_8BIT -2.0468
@@ -63,6 +64,7 @@ uint16_t measure_rht(uint8_t);
 float relative_humidity(uint16_t, float, int);
 float temperature(uint16_t, const char, int);
 float dew_point(float, float);
+int soft_reset();
 
 #endif // __HT_SEN_H__
 

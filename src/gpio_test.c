@@ -9,10 +9,6 @@
 #include "rpi_gpio.h"
 #include "htsen.h"
 
-#ifndef NO_ERROR
-#define NO_ERROR 0
-#endif
-
 // I/O access
 volatile unsigned *gpio;
 
@@ -23,17 +19,17 @@ int main()
      
     printf("Testing gpio.\n");
     setup_rpi_gpio();
+//    soft_reset();
+//    conn_reset();
 
-    sht15_status = read_status_register();
-    printf("SHT15 STATUS: %d", (uint)sht15_status );
-    conn_reset();
+//    sht15_status = read_status_register();
+//    printf("SHT15 STATUS: %d\n", sht15_status );
+
     
-    sleep(1);
+//    sleep(1);
     raw_data = measure_rht(MEASURE_TEMP);    
-    sleep(1);
     printf("SOT: %d\n", raw_data);
     raw_data = measure_rht(MEASURE_REL_HUM);
-
     printf("SORH: %d\n", raw_data);
 
     return 0;
