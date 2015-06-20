@@ -1,4 +1,4 @@
-/*
+ /*
  * htsen.c
  * Humidity and temperature sensor interface.
  */
@@ -21,7 +21,7 @@ volatile unsigned *gpio;
  */
 int transmission_start()
 {
-  printf("Starting send command.\n");
+    //printf("Starting send command.\n");
 
   struct timespec tim_setup, tim_clk;
   tim_setup.tv_sec = 0; tim_setup.tv_nsec = TRISE_NS;
@@ -70,14 +70,17 @@ int wait_for_device_ready(const float poll_period_ms, const float timeout_ms)
 {
   int i;
   int max_index = (int)floor(timeout_ms/poll_period_ms);
+//  printf("max_index: %d\n", max_index);
   struct timespec tim_poll;
   const long poll_period_ns = (long)(poll_period_ms * 1.0e6);
   tim_poll.tv_sec = 0; tim_poll.tv_nsec = poll_period_ns;
 
   // Set DATA pin to input
   INP_GPIO(DATA);
+  nanosleep(&tim_poll, NULL);
 
   // Poll DATA line until pulled low or timeout
+
   for (i=0; i<max_index; i++)
     {
       if (GET_GPIO(DATA) == 0) {
@@ -222,7 +225,7 @@ uint8_t read_status_register()
   GPIO_SET = 1<<SCK;
   nanosleep(&tim_clk_half, NULL);
   sen_ack = GET_GPIO(DATA);
-  printf("sen_ack: %d\n", sen_ack);
+//  printf("sen_ack: %d\n", sen_ack);
   nanosleep(&tim_clk_half, NULL);
   if (sen_ack)
     {
@@ -262,12 +265,12 @@ uint8_t read_status_register()
 int write_status_register(uint8_t status_register)
 {
   int i;
-  printf("write_status_register...\n");
+//  printf("write_status_register...\n");
   for (i=0; i<8; i++)
     {
       printf("%d", (WRITE_STATUS_REG_CMD&(128>>i))?1:0);
     }
-  printf("\n");
+//  printf("\n");
 
   return 0;
 }
@@ -290,14 +293,14 @@ uint16_t measure_rht(uint8_t measurement_type)
   tim_clk.tv_sec = 0; tim_clk.tv_nsec = TSCK_NS; // clock high/low time
   tim_clk_half.tv_sec = 0; tim_clk.tv_nsec = TSCK_NS>>1; // clock high/low time
 
-  if (measurement_type == MEASURE_TEMP_CMD)
-    {
-      printf("Measuring temperature...\n");
-    }
-  else if (measurement_type == MEASURE_REL_HUM_CMD)
-    {
-      printf("Measuring humidity...\n");
-    }
+//  if (measurement_type == MEASURE_TEMP_CMD)
+//    {
+//      printf("Measuring temperature...\n");
+//    }
+//  else if (measurement_type == MEASURE_REL_HUM_CMD)
+//    {
+//      printf("Measuring humidity...\n");
+//    }
 
   transmission_start();
 
@@ -327,6 +330,7 @@ uint16_t measure_rht(uint8_t measurement_type)
   nanosleep(&tim_clk_half, NULL);
   sen_ack = GET_GPIO(DATA);
   nanosleep(&tim_clk_half, NULL);
+  GPIO_CLR = 1<<SCK;
   if (sen_ack)
     {
       printf("[ERROR] Did not receive ACK from sensor! Exiting.\n");
@@ -376,8 +380,10 @@ uint16_t measure_rht(uint8_t measurement_type)
     {
       GPIO_SET = 1<<SCK;
       nanosleep(&tim_clk_half, NULL);
-      measurement_raw<<1;
-      measurement_raw += (GET_GPIO(DATA)?1:0);
+      measurement_raw = measurement_raw<<1;
+      if (GET_GPIO(DATA)){
+        measurement_raw += 1;
+      }
       nanosleep(&tim_clk_half, NULL);
       GPIO_CLR = 1<<SCK;
       nanosleep(&tim_clk, NULL);
@@ -484,19 +490,21 @@ int get_measurements(float *temperature_C,
   uint16_t rot1, sorh1;
   uint8_t sht15_status;
 
-  sht15_status = read_status_register();
-  if (sht15_status&1)
-    {
-      temp_resolution = 12;
-      rh_resolution = 8;
-    }
-  else
-    {
+//  sht15_status = read_status_register();
+//  if (sht15_status&1)
+//    {
+//      temp_resolution = 12;
+//      rh_resolution = 8;
+//    }
+//  else
+//    {
       temp_resolution = 14;
       rh_resolution = 12;
-    }
+//    }
   rot1 = measure_rht(MEASURE_TEMP_CMD);
+//  printf("rot1: %d\n", rot1);
   sorh1 = measure_rht(MEASURE_REL_HUM_CMD);
+//  printf("sorh1: %d\n", sorh1);
   *temperature_C = sot_to_temperature(rot1, 'C', temp_resolution);
   *relative_humidity = sorh_to_relative_humidity(sorh1,
                                                  *temperature_C,

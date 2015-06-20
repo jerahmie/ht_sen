@@ -18,7 +18,7 @@ int main()
   //    uint8_t sht15_status;
   float temperature_C, relative_humidity, dew_point_C;
   int status;
-  printf("Testing gpio.\n");
+//  printf("Testing gpio.\n");
   setup_rpi_gpio();
   //    soft_reset();
   //    conn_reset();
@@ -26,14 +26,17 @@ int main()
   //    sht15_status = read_status_register();
   //    printf("SHT15 STATUS: %d\n", sht15_status );
 
-  //    raw_data = measure_rht(MEASURE_TEMP_CMD);    
+  //raw_data = measure_rht(MEASURE_TEMP_CMD);    
   //    printf("SOT: %d\n", raw_data);
   //    raw_data = measure_rht(MEASURE_REL_HUM_CMD);
   //    printf("SORH: %d\n", raw_data);
 
-  status = get_measurements(&temperature_C, &relative_humidity, &dew_point_C);
-  printf("Temp: %.3f C, RH: %.1f, DP: %.3f C\n", temperature_C,
-         relative_humidity, dew_point_C);
-
+  while (1)
+  {
+      status = get_measurements(&temperature_C, &relative_humidity, &dew_point_C);
+      printf("Temp: %.3f C, RH: %.1f, DP: %.3f C\n", temperature_C,
+	     relative_humidity, dew_point_C);
+      sleep(600);
+  }
   return 0;
 }
