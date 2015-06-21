@@ -11,7 +11,7 @@
 #define DATA 23            // SHT15 DATA = RPI GPIO 23
 //#define FSCK 100000        // SHT15 SCK frequency 0.1 MHz
 //#define TSCK 0.00001       // SCK time period (seconds)
-#define TSCK_NS 10000      // SCK time period (nanoseconds)
+#define TSCK_NS 1000000      // SCK time period (nanoseconds)
 #define TSCKH TSCK         // SCK High Time
 #define TSCKL TSCK         // SCK Low Time
 #define TSCKH_NS TSCK_NS   // SCK High Time (nanoseconds)

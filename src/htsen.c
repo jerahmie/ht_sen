@@ -129,7 +129,7 @@ int soft_reset()
       GPIO_SET = 1<<SCK;
       nanosleep(&tim_clk, NULL);
       GPIO_CLR = 1<<SCK;
-
+      nanosleep(&tim_clk, NULL);
     }
     sleep(1);
     return 0;
@@ -158,9 +158,9 @@ int conn_reset()
   OUT_GPIO(DATA);
 
   GPIO_SET = 1<<DATA;
-  nanosleep(&tim_clk_half, NULL);
+  nanosleep(&tim_clk, NULL);
   GPIO_CLR = 1<<SCK;
-  nanosleep(&tim_clk_half, NULL);
+  nanosleep(&tim_clk, NULL);
 
   // toggle SCK 9 times
   for(index=0; index<9; index++)
@@ -223,10 +223,10 @@ uint8_t read_status_register()
   INP_GPIO(DATA);
   nanosleep(&tim_r, NULL);
   GPIO_SET = 1<<SCK;
-  nanosleep(&tim_clk_half, NULL);
+  nanosleep(&tim_clk, NULL);
   sen_ack = GET_GPIO(DATA);
 //  printf("sen_ack: %d\n", sen_ack);
-  nanosleep(&tim_clk_half, NULL);
+  nanosleep(&tim_clk, NULL);
   if (sen_ack)
     {
       printf("[ERROR] Did not receive ACK from sensor! Exiting.\n");
@@ -240,13 +240,13 @@ uint8_t read_status_register()
   for(i=0; i<8; i++)
     {
       GPIO_SET = 1<<SCK;
-      nanosleep(&tim_clk_half, NULL);
+      nanosleep(&tim_clk, NULL);
       status_register = status_register <<1;
       if (GET_GPIO(DATA)) {
         status_register += 1;
       }
 
-      nanosleep(&tim_clk_half, NULL);
+      nanosleep(&tim_clk, NULL);
       GPIO_CLR = 1<<SCK;
       nanosleep(&tim_clk, NULL);
     }
@@ -288,11 +288,11 @@ uint16_t measure_rht(uint8_t measurement_type)
   int i;
   uint16_t measurement_raw = 0;
   uint16_t sen_ack;
-  struct timespec tim_r, tim_clk, tim_clk_half;
+  struct timespec tim_r, tim_clk, tim_clk_half, tim_clk_ack;
   tim_r.tv_sec = 0; tim_r.tv_nsec=TRISE_NS;      // rise/fall time
   tim_clk.tv_sec = 0; tim_clk.tv_nsec = TSCK_NS; // clock high/low time
-  tim_clk_half.tv_sec = 0; tim_clk.tv_nsec = TSCK_NS>>1; // clock high/low time
-
+  tim_clk_half.tv_sec = 0; tim_clk_half.tv_nsec = TSCK_NS>>1; // clock high/low time
+  tim_clk_ack.tv_sec = 0; tim_clk_ack.tv_nsec = 10*TSCK_NS;
 //  if (measurement_type == MEASURE_TEMP_CMD)
 //    {
 //      printf("Measuring temperature...\n");
@@ -319,6 +319,7 @@ uint16_t measure_rht(uint8_t measurement_type)
         GPIO_SET = 1<<SCK;
         nanosleep(&tim_clk, NULL);
         GPIO_CLR = 1<<SCK;
+	nanosleep(&tim_clk, NULL);
     }
 
   // switch DATA to input to read results
@@ -327,9 +328,9 @@ uint16_t measure_rht(uint8_t measurement_type)
 
   //nanosleep(&tim_r, NULL);
   GPIO_SET = 1<<SCK;
-  nanosleep(&tim_clk_half, NULL);
+  nanosleep(&tim_clk, NULL);
   sen_ack = GET_GPIO(DATA);
-  nanosleep(&tim_clk_half, NULL);
+  nanosleep(&tim_clk, NULL);
   GPIO_CLR = 1<<SCK;
   if (sen_ack)
     {
@@ -338,56 +339,70 @@ uint16_t measure_rht(uint8_t measurement_type)
     }
 
   // poll DATA ready every 10 ms (1sec timeout)
-  int data_ready_timeout = wait_for_device_ready(10.0, 1000.0);  
-
+  int data_ready_timeout = wait_for_device_ready(10.0, 1000.0);
+  
   if (data_ready_timeout) {
     printf("[ERROR] Device timed out waiting for SHT15 to release DATA line.");
     return -1;
   }
-  GPIO_CLR = 1<<SCK;
-  nanosleep(&tim_clk, NULL);
+//  GPIO_SET = 1<<SCK;
+//  nanosleep(&tim_clk, NULL);
+
 
   // read MSb
   for(i=0; i<8; i++)
     {
       GPIO_SET = 1<<SCK;
-      nanosleep(&tim_clk_half, NULL);
+      nanosleep(&tim_clk, NULL);
       measurement_raw = measurement_raw<<1;
       if (GET_GPIO(DATA)){
         measurement_raw += 1;
       }
-      nanosleep(&tim_clk_half, NULL);
+      nanosleep(&tim_clk, NULL);
       GPIO_CLR = 1<<SCK;
       nanosleep(&tim_clk, NULL);
-      nanosleep(&tim_clk_half, NULL);
+      nanosleep(&tim_clk, NULL);
     }
 
   // send mid-data ACK
   INP_GPIO(DATA);
   OUT_GPIO(DATA);
-  nanosleep(&tim_clk_half, NULL);
+  GPIO_SET = 1<<DATA;
+  nanosleep(&tim_clk, NULL);
+  nanosleep(&tim_clk, NULL);
+  nanosleep(&tim_clk, NULL);  
   GPIO_CLR = 1<<DATA;
-  nanosleep(&tim_r, NULL);
+  nanosleep(&tim_clk, NULL);
+  nanosleep(&tim_clk, NULL);
+  nanosleep(&tim_clk, NULL);
   GPIO_SET = 1<<SCK;
   nanosleep(&tim_clk, NULL);
-  INP_GPIO(DATA);
-  nanosleep(&tim_r, NULL);
-  GPIO_CLR = 1<<SCK;
+
   nanosleep(&tim_clk, NULL);
+  nanosleep(&tim_clk, NULL);
+  nanosleep(&tim_clk, NULL);
+  GPIO_CLR = 1<<SCK;
+  INP_GPIO(DATA);
+//  nanosleep(&tim_clk_ack, NULL);
 
   // read LSb
   for(i=0; i<8; i++)
     {
       GPIO_SET = 1<<SCK;
-      nanosleep(&tim_clk_half, NULL);
+      nanosleep(&tim_clk, NULL);
       measurement_raw = measurement_raw<<1;
       if (GET_GPIO(DATA)){
         measurement_raw += 1;
       }
-      nanosleep(&tim_clk_half, NULL);
+      nanosleep(&tim_clk, NULL);
       GPIO_CLR = 1<<SCK;
       nanosleep(&tim_clk, NULL);
+      nanosleep(&tim_clk, NULL);
     }
+  OUT_GPIO(DATA);
+  nanosleep(&tim_clk, NULL);
+  GPIO_SET = 1<<DATA;
+  nanosleep(&tim_clk, NULL);
 
   return measurement_raw;
 }
@@ -489,7 +504,10 @@ int get_measurements(float *temperature_C,
   uint temp_resolution, rh_resolution;
   uint16_t rot1, sorh1;
   uint8_t sht15_status;
-
+  struct timespec tim_r, tim_clk, tim_clk_half;
+  tim_r.tv_sec = 0; tim_r.tv_nsec=TRISE_NS;      // rise/fall time
+  tim_clk.tv_sec = 0; tim_clk.tv_nsec = TSCK_NS<<2; // clock high/low time
+  tim_clk_half.tv_sec = 0; tim_clk.tv_nsec = TSCK_NS>>1; // clock high/low time
 //  sht15_status = read_status_register();
 //  if (sht15_status&1)
 //    {
@@ -501,10 +519,12 @@ int get_measurements(float *temperature_C,
       temp_resolution = 14;
       rh_resolution = 12;
 //    }
-  rot1 = measure_rht(MEASURE_TEMP_CMD);
-//  printf("rot1: %d\n", rot1);
   sorh1 = measure_rht(MEASURE_REL_HUM_CMD);
-//  printf("sorh1: %d\n", sorh1);
+  nanosleep(&tim_clk, NULL);
+  rot1 = measure_rht(MEASURE_TEMP_CMD);
+  printf("rot1: %d\n", rot1);
+  printf("sorh1: %d\n", sorh1);
+
   *temperature_C = sot_to_temperature(rot1, 'C', temp_resolution);
   *relative_humidity = sorh_to_relative_humidity(sorh1,
                                                  *temperature_C,

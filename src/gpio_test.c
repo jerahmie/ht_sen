@@ -20,7 +20,10 @@ int main()
   int status;
 //  printf("Testing gpio.\n");
   setup_rpi_gpio();
-  //    soft_reset();
+//  sleep(1);
+//  soft_reset();
+//  sleep(1);
+  
   //    conn_reset();
 
   //    sht15_status = read_status_register();
@@ -34,7 +37,7 @@ int main()
   while (1)
   {
       status = get_measurements(&temperature_C, &relative_humidity, &dew_point_C);
-      printf("Temp: %.3f C, RH: %.1f, DP: %.3f C\n", temperature_C,
+      printf("Temp: %.3f C, RH: %.3f, DP: %.3f C\n", temperature_C,
 	     relative_humidity, dew_point_C);
       sleep(600);
   }
