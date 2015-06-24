@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
 #include <unistd.h>
 #include <signal.h>
 #include <sys/types.h>
@@ -9,10 +10,11 @@
 #include <getopt.h>
 #include <time.h>
 #include "rpi_gpio.h"
+#include "htsen.h"
 
 void print_help(void)
 {
-  printf("This is the help message.\n");
+  printf("\nUsage: htsend [options].\n");
   exit(EXIT_SUCCESS);
 }
 
@@ -84,24 +86,27 @@ static void setup_daemon(const char *logdir)
 
   /* Open the log file. */
   
-  openlog("firstdaemon", LOG_PID, LOG_DAEMON);
+  openlog("/var/log/htsend.log", LOG_PID, LOG_DAEMON);
 
 }
 
 int main(int argc, char* argv[])
 {
   FILE *fp = NULL;
-  int iteration = 0;
+  float temperature_C, relative_humidity, dew_point_C;
+  int status;
 
   // TODO: add parameter to save log to directory
   // in the meantime, use the current user home directory (this can be default).
   struct passwd *pw = getpwuid(getuid());
-  char *logdir = pw->pw_dir;
+//  char *htsendir = pw->pw_dir;
+  char *htsendir = "/var/htsend/data/";
   time_t timer;
   char time_buffer[25];
   struct tm* tm_info;
-  
   int c;
+  
+  syslog(LOG_INFO, "Starting htsend.");
   
   while (1)
     {
@@ -130,8 +135,7 @@ int main(int argc, char* argv[])
 	  break;
 
 	case 'f':
-	  logdir = optarg;
-	  printf("File location: %s\n", optarg);
+	    htsendir = optarg;
 	  break;
 	  
 	default:
@@ -143,28 +147,30 @@ int main(int argc, char* argv[])
   /* Check for log directory location and create, if necessary. */
   struct stat st = {0};
   
-  if (stat(logdir, &st) == -1)
+  if (stat(htsendir, &st) == -1)
     {
-      if (mkdir(logdir, 0700) == -1)
+      if (mkdir(htsendir, 0700) == -1)
 	{
-	  syslog(LOG_ERR, "Could not create directory %s.", logdir);
+	  printf("Could not create directory %s.\n", htsendir);
+	  syslog(LOG_ERR, "Could not create directory %s.", htsendir);
 	}
     }
   
-  setup_daemon((const char*)logdir);
+  setup_daemon((const char*)htsendir);
 
   /* Open the output file */
   syslog(LOG_NOTICE, "Opening log file.");
-  fp = fopen("Log.txt", "a+");
+  fp = fopen("ht_data.txt", "a+");
   if (fp == NULL)
     {
+      printf("Failed to open log file.");
       syslog(LOG_NOTICE, "Failed to open log file.");
       return(EXIT_FAILURE);
     }
 
   // configure GPIO
   setup_rpi_gpio();
-
+  
   while (1)
     {
       // TODO: Insert daemon code here.
@@ -172,13 +178,16 @@ int main(int argc, char* argv[])
       tm_info = localtime(&timer);
       strftime(time_buffer, 25, "%Y:%m:%d:%H:%M:%S", tm_info);
       
-      iteration++;
-      fprintf(fp, "%s, Loop iteration %d\n", time_buffer, iteration);
+      status = get_measurements(&temperature_C, 
+				&relative_humidity, 
+				&dew_point_C);
+      fprintf(fp, "%s,%.2f,%.2f,%.2f\n", time_buffer, temperature_C, 
+	      relative_humidity, dew_point_C);
       fflush(fp);
-      sleep(10);
-      //      break;
-    }
+      sleep(600);
 
+    }
+  printf("First daemon terminated.");
   syslog(LOG_NOTICE, "First daemon terminated.");
   closelog();
 

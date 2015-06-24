@@ -225,7 +225,6 @@ uint8_t read_status_register()
   GPIO_SET = 1<<SCK;
   nanosleep(&tim_clk, NULL);
   sen_ack = GET_GPIO(DATA);
-//  printf("sen_ack: %d\n", sen_ack);
   nanosleep(&tim_clk, NULL);
   if (sen_ack)
     {
@@ -265,12 +264,10 @@ uint8_t read_status_register()
 int write_status_register(uint8_t status_register)
 {
   int i;
-//  printf("write_status_register...\n");
   for (i=0; i<8; i++)
     {
       printf("%d", (WRITE_STATUS_REG_CMD&(128>>i))?1:0);
     }
-//  printf("\n");
 
   return 0;
 }
@@ -293,14 +290,6 @@ uint16_t measure_rht(uint8_t measurement_type)
   tim_clk.tv_sec = 0; tim_clk.tv_nsec = TSCK_NS; // clock high/low time
   tim_clk_half.tv_sec = 0; tim_clk_half.tv_nsec = TSCK_NS>>1; // clock high/low time
   tim_clk_ack.tv_sec = 0; tim_clk_ack.tv_nsec = 10*TSCK_NS;
-//  if (measurement_type == MEASURE_TEMP_CMD)
-//    {
-//      printf("Measuring temperature...\n");
-//    }
-//  else if (measurement_type == MEASURE_REL_HUM_CMD)
-//    {
-//      printf("Measuring humidity...\n");
-//    }
 
   transmission_start();
 
@@ -345,9 +334,6 @@ uint16_t measure_rht(uint8_t measurement_type)
     printf("[ERROR] Device timed out waiting for SHT15 to release DATA line.");
     return -1;
   }
-//  GPIO_SET = 1<<SCK;
-//  nanosleep(&tim_clk, NULL);
-
 
   // read MSb
   for(i=0; i<8; i++)
@@ -522,8 +508,6 @@ int get_measurements(float *temperature_C,
   sorh1 = measure_rht(MEASURE_REL_HUM_CMD);
   nanosleep(&tim_clk, NULL);
   rot1 = measure_rht(MEASURE_TEMP_CMD);
-  printf("rot1: %d\n", rot1);
-  printf("sorh1: %d\n", sorh1);
 
   *temperature_C = sot_to_temperature(rot1, 'C', temp_resolution);
   *relative_humidity = sorh_to_relative_humidity(sorh1,
